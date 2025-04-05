@@ -5,6 +5,8 @@ library(tidyr)
 library(stats)
 
 
+
+# BRINGING IN DATA
 # clear variables each time
 rm(list = ls())
 # ensure code is running in the right directory
@@ -14,6 +16,7 @@ df<-read.csv('data.csv')
 n <-nrow(df) # number of participants
 
 
+# NECESSARY DATA CLEANING
 # organizing Music and no Music Scores and Times
 df$M.Score <- ifelse(df$Music == 'A', df$A.Score, df$B.Score)
 df$NM.Score <-ifelse(df$Music=='A', df$B.Score, df$A.Score)
@@ -21,7 +24,14 @@ df$NM.Score <-ifelse(df$Music=='A', df$B.Score, df$A.Score)
 df$M.Time <- ifelse(df$Music == 'A', df$A.Time, df$B.Time)
 df$NM.Time <-ifelse(df$Music =='A', df$B.Time, df$A.Time)
 
-df$Score.Diff <- df$NM.Score - df$M.Score # if 
+df$Score.Diff <- df$NM.Score - df$M.Score # POSITIVE is better NO MUSIC
+df$Time.Diff <- df$NM.Time - df$M.Time # NEGATIVE is 'better' (smaler) NO MUSIC
+
+df$Mean.Score <- (df$A.Score+df$B.Score)/2
+df$Mean.Time <- (df$A.Time+df$B.Time)/2
+
+df$Bio <- ifelse(df$Major == 'bio', 1, 0)
+
 
 
 # removing anyone whose data isn't entered yet
@@ -30,37 +40,35 @@ df <- df[!is.na(df$A.Score), ]
 
 
 
-#look at test A vs test B
-
-boxplot(df$A.Score, df$B.Score,  ylab = "Score [%]", names = c("Test A", "Test B"), main = "Scores on Tests A and B - was one test 'harder' than the other?")
-boxplot(df$A.Time, df$B.Time,  ylab = "Time [s]", names = c("Test A", "Test B"), main = "Time taken on Tests A and B - was one test 'harder' than the other?")
-hist(df$A.Score, breaks= 5, main = "Score Distribution on Quiz A", xlab = "Score")
-hist(df$B.Score, breaks= 5, main = "Score Distribution on Quiz B", xlab = "Score")
-hist(df$A.Time, breaks= 10)
-hist(df$B.Time, breaks= 10)
 
 
-# look at correlation of scores
-# png(file = "Music-No Music Score Scatterplot.png")
-plot(df$M.Score, df$NM.Score, 
-     xlab = "Score WITH Music", 
-     ylab = "Score WITHOUT Music")
 
-res <- lm(df$M.Score ~df$NM.Score)
-abline(res$coefficients[1], res$coefficients[2])
-x<-round(cor(df$M.Score, df$NM.Score), 3)
-legend("topleft", as.expression(x))
-#dev.off()
 
-plot(df$A.Time, df$A.Score)
-cor(df$A.Time, df$A.Score)
-plot(df$B.Time, df$B.Score)
-cor(df$B.Time, df$B.Score)
+
+
+
+
+
+
+
+# MAIN ANALYSIS
+
+
+# MUSIC VS NO MUSIC
+
+# do a t-test. Paired = TRUE tell it to do a 'paired' test (what we did, where everyone writes both quizzes). 
+t.test(df$M.Score, df$NM.Score, paired = TRUE)
+t.test(df$M.Time, df$NM.Time, paired = TRUE)
+
+# boxplot of Music vs No music
+boxplot(df$M.Score, df$NM.Score, names = c("Music", "No Music"), main = "Music v No music on score - no observable effec tin graph") 
+boxplot(df$M.Time, df$NM.Time, names = c("Music", "No Music"), main = "Music v No music on TIME - slight change") 
 
 
 
 
 # Basic facts about the dataset
+
 mean(df$Score.Diff)
 
 
@@ -73,20 +81,6 @@ sd(df$M.Time)/sqrt(n)
 mean(df$NM.ime)
 sd(df$NM.Time)/sqrt(n)
 
-# is A harder than B?
-mean(df$A.Score)
-mean(df$B.Score)
-
-
-" Things I want to get
-1. Boxplot of the music and non music groups"
-
-
-"2. Time vs score"
-all_tests <- df%>% 
-  select(Subject.ID, M.Time, NM.Time, M.Score, NM.Score) %>%
-  pivot_longer(cols = c(df$M.Score, df$NM.Score), names_to = "Score") %>%
-  select(Score, Time)
 
 
 
@@ -95,16 +89,90 @@ all_tests <- df%>%
 
 
 
-"3. Doing the test first or second - did this have a strong effect? 
 
 
-4. A test vs B test - was one easier than the other? " 
 
 
-    
-             
-            
 
+# IS A OR B HARDER?
+
+boxplot(df$A.Score, df$B.Score,  ylab = "Score [%]", names = c("Test A", "Test B"), main = "Scores on Tests A and B - was one test 'harder' than the other?")
+boxplot(df$A.Time, df$B.Time,  ylab = "Time [s]", names = c("Test A", "Test B"), main = "Time taken on Tests A and B - was one test 'harder' than the other?")
+hist(df$A.Score, breaks= 5, main = "Score Distribution on Quiz A", xlab = "Score")
+hist(df$B.Score, breaks= 5, main = "Score Distribution on Quiz B", xlab = "Score")
+hist(df$A.Time, breaks= 10)
+hist(df$B.Time, breaks= 10)
+
+
+# CORRELATION OF SCORES FOR INDIVIDUALS
+# png(file = "Music-No Music Score Scatterplot.png")
+plot(df$M.Score, df$NM.Score, 
+     xlab = "Score WITH Music", 
+     ylab = "Score WITHOUT Music")
+
+res <- lm(df$M.Score ~df$NM.Score)
+abline(res$coefficients[1], res$coefficients[2])
+x<-round(cor(df$M.Score, df$NM.Score), 3)
+legend("topleft", as.expression(x))
+#dev.off()
+
+
+# TIME TAKEN VS SCORE
+
+
+plot(df$Mean.Time, df$Mean.Score)
+summary(lm(df$Mean.Time ~ df$Mean.Score))
+
+
+
+
+# TIME TAKE ON ONE TEST VS ANOTHER
+plot(df$A.Time, df$B.Time, main = "Time taken on Quiz A and B was highly correlated/predictable.")
+res <- lm(df$M.Score ~df$NM.Score)
+abline(res$coefficients[1], res$coefficients[2])
+res$coefficients[1]
+res$coefficients[2]
+
+
+
+# BIO vs NON- BIO students
+
+t.test(df$Score.Diff ~ df$Bio)
+t.test(df$Time.Diff ~ df$Bio ) # close to significant
+
+# GENDER?
+
+t.test(df$Score.Diff ~ df$Gender)
+t.test(df$Time.Diff ~ df$Gender) # close to significant
+
+# OVER/UNDER 25?
+
+t.test(df$Score.Diff ~ df$Under.25)
+t.test(df$Time.Diff ~ df$Under.25)
+
+
+# MULTIPLE LINEAR REGRESSION - gender, major, age on scoe
+regression_score<-lm(df$Score.Diff ~ df$Gender + df$Under.25 + df$Bio)
+summary(regression_score)
+residuals_score<-resid(regression_score)
+hist(residuals_score)
+# evaluating goodness of full regression model - are all the men or women above or below the line?
+plot(factor(df$Gender), residuals_score)
+plot(df$Under.25, residuals_score)
+plot(df$Bio, residuals_score) 
+
+
+
+
+
+
+
+## MULTIPLE LINEAR REGRESSION - gender, major, age on time
+
+regression_time<-lm(df$Time.Diff ~ df$Gender + df$Under.25 + df$Bio)
+summary(regression_time)
+residuals_time<-resid(regression_time)
+hist(residuals_time)
 
 
 
