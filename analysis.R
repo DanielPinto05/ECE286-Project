@@ -120,6 +120,13 @@ hist(df$A.Time, breaks= 10)
 hist(df$B.Time, breaks= 10)
 
 
+
+
+#DOES ORDER MATTER?
+
+boxplot(df$First.Score, df$Second.Score, ylab = "Score", names = c("First Quiz Score", "Second Quiz Score"), main = "Scores on the first and second quizzes")
+boxplot(df$First.Time, df$Second.Time, ylab = "Time", names = c("First Quiz Score", "Second Quiz Score"), main = "Times on the first and second quizzes")
+
 # CORRELATION OF SCORES FOR INDIVIDUALS
 # png(file = "Music-No Music Score Scatterplot.png")
 plot(df$M.Score, df$NM.Score, 
