@@ -5,7 +5,6 @@ library(tidyr)
 library(stats)
 
 
-
 # BRINGING IN DATA
 # clear variables each time
 rm(list = ls())
@@ -24,8 +23,19 @@ df$NM.Score <-ifelse(df$Music=='A', df$B.Score, df$A.Score)
 df$M.Time <- ifelse(df$Music == 'A', df$A.Time, df$B.Time)
 df$NM.Time <-ifelse(df$Music =='A', df$B.Time, df$A.Time)
 
+df$First.Score<-ifelse(df$First == 'A', df$A.Score, df$B.Score)
+df$Second.Score<-ifelse(df$First == 'A', df$B.Score, df$A.Score)
+
+
+df$First.Time<-ifelse(df$First == 'A', df$A.Time, df$B.Time)
+df$Second.Time<-ifelse(df$First == 'A', df$B.Time, df$A.Time)
+
 df$Score.Diff <- df$NM.Score - df$M.Score # POSITIVE is better NO MUSIC
-df$Time.Diff <- df$NM.Time - df$M.Time # NEGATIVE is 'better' (smaler) NO MUSIC
+df$Time.Diff <-  df$M.Time - df$NM.Time # POSITIVE is 'better' (smaler) NO MUSIC
+
+df$Score.Order.Diff <- df$Second.Score -df$First.Score # positive means better on second
+df$Time.Order.Diff <- df$First.Time - df$Second.Time # positive means better on second
+
 
 df$Mean.Score <- (df$A.Score+df$B.Score)/2
 df$Mean.Time <- (df$A.Time+df$B.Time)/2
@@ -38,11 +48,14 @@ df$Bio <- ifelse(df$Major == 'bio', 1, 0)
 df <- df[!is.na(df$A.Score), ]
 
 
+hist(df$Score.Diff, xlab = "Score Diff = Non-music score - Music score", main = "Histogram of Score Diffs", xlim =c(-50, 50))
+hist(df$Time.Diff, xlab = "Time Diff =Music time - Non-music time", main = "Histogram of Time Diffs")
 
 
-
-
-
+hist(df$Score.Order.Diff)
+mean(df$Score.Order.Diff)
+hist(df$Time.Order.Diff)
+mean(df$Time.Order.Diff)
 
 
 
@@ -57,12 +70,15 @@ df <- df[!is.na(df$A.Score), ]
 # MUSIC VS NO MUSIC
 
 # do a t-test. Paired = TRUE tell it to do a 'paired' test (what we did, where everyone writes both quizzes). 
-t.test(df$M.Score, df$NM.Score, paired = TRUE)
+t.test(df$NM.Score, df$M.Score, paired = TRUE)
 t.test(df$M.Time, df$NM.Time, paired = TRUE)
 
+
+
+
 # boxplot of Music vs No music
-boxplot(df$M.Score, df$NM.Score, names = c("Music", "No Music"), main = "Music v No music on score - no observable effec tin graph") 
-boxplot(df$M.Time, df$NM.Time, names = c("Music", "No Music"), main = "Music v No music on TIME - slight change") 
+boxplot(df$M.Score, df$NM.Score, ylab = "Score", names = c("Music", "No Music"), main = "Music vs. No Music Scores") 
+boxplot(df$M.Time, df$NM.Time, ylab = "Time [s]", names = c("Music", "No Music"), main = "Music v No Music Times") 
 
 
 
@@ -138,18 +154,27 @@ res$coefficients[2]
 # BIO vs NON- BIO students
 
 t.test(df$Score.Diff ~ df$Bio)
-t.test(df$Time.Diff ~ df$Bio ) # close to significant
+t.test(df$Time.Diff ~ df$Bio ) 
+
+bio <- df[df$Major == "bio", ]
+nonbio <-df[df$Major != "Bio", ]
+boxplot(bio$Time.Diff, nonbio$Time.Diff, main = "Time Diffs for Biology Major and Non-Biology Major Groups", names = c("Biology Major", "Non-Biology Major"), ylab = "Score Diff = Music - non-music")
 
 # GENDER?
 
 t.test(df$Score.Diff ~ df$Gender)
-t.test(df$Time.Diff ~ df$Gender) # close to significant
+t.test(df$Time.Diff ~ df$Gender) 
 
 # OVER/UNDER 25?
 
 t.test(df$Score.Diff ~ df$Under.25)
 t.test(df$Time.Diff ~ df$Under.25)
 
+u25 <- df[df$Under.25==TRUE, ]
+o25 <- df[df$Under.25 == FALSE, ]
+
+boxplot(u25$Score.Diff, o25$Score.Diff, main = "Score Diffs for Under 25 and Over 25 Groups", names = c("Under 25", "Over 25"), ylab = "Score Diff = Non-music - music")
+boxplot(u25$Time.Diff, o25$Time.Diff, main = "Time Diffs for Under 25 and Over 25 Groups", names = c("Under 25", "Over 25"), ylab = "time Diff = Music - non-music")
 
 # MULTIPLE LINEAR REGRESSION - gender, major, age on scoe
 regression_score<-lm(df$Score.Diff ~ df$Gender + df$Under.25 + df$Bio)
@@ -160,6 +185,9 @@ hist(residuals_score)
 plot(factor(df$Gender), residuals_score)
 plot(df$Under.25, residuals_score)
 plot(df$Bio, residuals_score) 
+
+
+
 
 
 
